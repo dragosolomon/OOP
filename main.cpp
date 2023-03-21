@@ -1,341 +1,319 @@
 #include <iostream>
-#include <fstream>
-#include <list>
 using namespace std;
-class Numar
+
+class Multime
 {
-    int semn, nr_cifre; //semn=0(negativ)/1(pozitiv)
-    //nr_cifre=nr de cifre al Numarului Intreg Mare
-    list <int> L; //Lista de Cifre
-public:
-    friend istream& operator>>(istream &input, Numar &nr) //Functie Citire
-    {
-        int x;
-        input >> nr.semn >> nr.nr_cifre;
-        for(int i=0; i<nr.nr_cifre; i++)
-        {
-            input >> x;
-            nr.L.push_back(x);
-        }
-        return input;
-    }
-    friend ostream& operator<<(ostream &output, const Numar &nr) //Functie Afisare
-    {
-        if(nr.semn==0) output << "-";
-        for(int p: nr.L) output<<p;
-        return output;
-    }
-    Numar maxim(const Numar a); //Functie Max in Modul
-    //Functie care verifica daca 2 module sunt egale
-    bool egale(const Numar a)
-    {
-        //Daca nr de cifre difera
-        if(a.nr_cifre!=this->nr_cifre) return false;
-        //Altfel
-        auto i=a.L.begin();
-        auto j=this->L.begin();
-        for(; i!= a.L.end() && j!=this->L.end(); ++i, ++j)
-            //Se iau cifrele celor 2 liste concomitent si daca una
-            //e diferita se returneaza fals (modulele nu sunt egale)
-            if(*i!=*j) return false;
-
-        //Modulele sunt Egale
-        return true;
-    }
-    Numar operator+(const Numar &nr); //Functie Adunare
-    Numar operator-(const Numar &nr); //Functie Scadere
-    Numar operator*(const Numar &nr); //Functie Inmultire
-    friend class Vector; //Clasa Prietena Vector
-};
-Numar Numar::maxim(const Numar a) //Functie Max in Modul
-{
-    if(a.nr_cifre>this->nr_cifre) return a;
-    if(a.nr_cifre<this->nr_cifre) return *this;
-
-    //Daca nr de cifre 'a' = nr cifre al listei pe care o vom compara
-    auto i=a.L.begin();
-    auto j=this->L.begin();
-    for(; i!= a.L.end() && j!=this->L.end(); ++i, ++j)
-    {
-        //Se iau cifrele celor 2 liste concomitent si daca una
-        //e diferita se returneaza nr cu cifra mai mare
-        if(*i>*j) return a;
-        if(*i<*j) return *this;
-    }
-
-    //Daca sunt egale
-    return a;
-}
-Numar Numar::operator+(const Numar &nr) //Functie Adunare
-{
-    Numar nou, aux, b;
-    //Daca semnele sunt identice
-    if(this->semn==nr.semn)
-    {
-        nou.semn=nr.semn;
-
-        //Se face adunare Normala
-        aux=nr; //facem copie pt ca nu putem modifica o const
-        //Inversam Listele ca sa facem suma de la unitati
-        aux.L.reverse();
-        this->L.reverse();
-        int cifra=0; //va retine ce depaseste 10 la adunare
-        nou.nr_cifre=0; //Initial nou are 0 cifre
-        //Incepem de la cifra unitatilor
-        auto i=aux.L.begin();
-        auto j=this->L.begin();
-        for(; i!= aux.L.end() && j!=this->L.end(); ++i, ++j)
-        {
-            cifra=(*i)+(*j)+cifra; //cifra=suma celor 2 cifre din lista + restul
-            nou.L.push_back(cifra%10);
-            cifra/=10; //1 sau 0
-            nou.nr_cifre++; //crestem nr de cifre
-        }
-        //daca au ramas cifre neverificate din prima lista
-        for(; i!= aux.L.end(); ++i)
-        {
-            cifra=(*i)+cifra;
-            nou.L.push_back(cifra%10);
-            cifra/=10; //1 sau 0
-            nou.nr_cifre++; //crestem nr de cifre
-        }
-        //daca au ramas cifre neverificate din a doua lista
-        for(; j!= this->L.end(); ++j)
-        {
-            cifra=(*j)+cifra;
-            nou.L.push_back(cifra%10);
-            cifra/=10; //1 sau 0
-            nou.nr_cifre++; //crestem nr de cifre
-        }
-        //daca a ramas un rest de la adunare
-        while(cifra)
-        {
-            nou.L.push_back(cifra%10);
-            cifra/=10; //1 sau 0
-            nou.nr_cifre++; //crestem nr de cifre
-        }
-        //Ca sa revin la lista initiala
-        this->L.reverse();
-    }
-        //Daca avem + si -
-    else
-    {
-        //Daca modulul e egal, nr devine 0
-        if(this->egale(nr)==true)
-        {
-            nou.semn=1; nou.nr_cifre=1;
-            nou.L.push_back(0); return nou;
-        }
-        //Altfel se ia semnul nr cu modulul mai mare
-        aux=this->maxim(nr);
-        if(aux.egale(nr)) {nou.semn=nr.semn; b=*this;}
-        else {nou.semn=this->semn; b=nr;}
-
-        //Acum se face scaderea din nr mai mare (aux)
-        //Inversam Listele ca sa facem suma de la unitati
-        aux.L.reverse();
-        b.L.reverse();
-        int cifra=0; //va retine ce depaseste 10 pt scadere
-        nou.nr_cifre=0; //Initial nou are 0 cifre
-        //Incepem de la cifra unitatilor
-        auto i=aux.L.begin(); //aux e MAX
-        auto j=b.L.begin();
-        for(; i!= aux.L.end() && j!=b.L.end(); ++i, ++j)
-        {
-            //din calculele anterioare
-            if(cifra==1) (*i)--;
-            if((*i)<(*j))
-            {
-                cifra=1;
-                (*i)+=10;
-                (*i)-=(*j);
-                nou.L.push_back((*i));
-            }
-            else
-            {
-                cifra=0;
-                //cout<<*i<<" "<<*j<<endl;
-                (*i)-=(*j);
-                nou.L.push_back((*i));
-            }
-            nou.nr_cifre++; //crestem nr de cifre
-        }
-        //daca au ramas cifre neverificate din prima lista
-        for(; i!= aux.L.end(); ++i)
-        {
-            //din calculele anterioare
-            if(cifra==1) (*i)--;
-            if((*i)==-1) nou.L.push_back(9);
-            else
-            {
-                cifra=0; nou.L.push_back(*i);
-            }
-            nou.nr_cifre++;
-        }
-        //atunci cand avem prima cifra 1
-        if(nou.L.back()==0) nou.L.pop_back();
-    }
-
-    //Inversam lista ca sa putem sa o afisam corect
-    nou.L.reverse();
-    return nou;
-}
-Numar Numar::operator-(const Numar &nr) //Functie Scadere
-//Seamana cu Functia Adunare
-{
-    Numar nou=nr, aux=*this;
-    //Daca semnul lui nr (celui de-al 2-lea nr) este -
-    //Semnul se transforma in +
-    if(nr.semn==0) nou.semn=1;
-        //Se face adunare Normala (definita mai sus)
-        //Tb doar sa schimb semnul lui nr ca sa fie adunare
-
-        //Semnul celui de-al 2-lea nr e +
-        //Tot adunare dar consideram al 2-lea nr ca avand semnul -
-    else nou.semn=0;
-
-    return nou+aux;
-}
-Numar Numar::operator*(const Numar &nr) //Functie Inmultire
-{
-    Numar nou, nr1, aux;
-    //Daca semnul este identic
-    if(this->semn==nr.semn) nou.semn=1; //semnul e mereu +
-        //(+)*(-)
-    else nou.semn=0; //altfel e -
-
-    aux.semn=nou.semn;
-    //Inmultire
-    nr1=nr; //facem copie pt ca nu putem modifica o const
-    //Inversam Listele ca sa facem inmultirea de la unitati
-    nr1.L.reverse();
-    this->L.reverse();
-    int cifra=0; //va retine ce depaseste la inmultire
-    //In nou retinem suma produselor
-    nou.nr_cifre=0; //Initial nou are 0 cifre
-    //Incepem de la cifra unitatilor
-    auto i=nr1.L.begin();
-    auto j=this->L.begin();
-    int k=1, k1; //ca sa stim cate zerorui adaugam la final nr aux
-    for(; i!= nr1.L.end() && k; ++i, ++k)
-    {
-        j=this->L.begin(); //ca sa luam al 2-lea nr de la inceput mereu
-        //In aux retinem produsul cu fiecare cifra in parte
-        aux.nr_cifre=0; //Initial aux are 0 cifre
-        aux.L.clear(); //golim lista auxiliara
-        //Adaugam zerourile finale de la aux
-        k1=k-1;
-        while(k1)
-        {
-            aux.L.push_back(0);
-            aux.nr_cifre++; k1--;
-        }
-        for(; j!= this->L.end(); ++j)
-        {
-            cifra+=(*i)*(*j);
-            aux.L.push_back(cifra%10);
-            cifra/=10;
-        }
-        //daca ramane un rest de la adunarea produselor
-        while(cifra)
-        {
-            aux.L.push_back(cifra%10);
-            cifra/=10;
-        }
-        //Nu mai tb sa intoarcem atunci nou
-        aux.L.reverse();
-        nou=nou+aux;
-    }
-
-    this->L.reverse();
-    return nou;
-}
-
-class Vector
-{
+    //- membri privati pentru elementele multimii si cardinal;
 private:
-    int nr=0; //cate elemente sunt in vector
-    Numar *V=new Numar[nr]; //elementele vectorului sunt liste
+    int set[1000], card;
+
+
 public:
-    friend istream& operator>>(istream &input, Vector &a) //Functie Citire
+    //- constructori;
+    Multime(int card)
     {
-        input >> a.nr; a.V=new Numar[a.nr];
-        for(int i=0; i<a.nr; i++) input >> a.V[i];
-        return input;
+        this->card = card;
     }
-    friend ostream& operator<<(ostream &output, const Vector &a) //Functie Afisare
+
+    Multime()
     {
-        for(int i=0; i<a.nr; i++) output<<a.V[i]<<endl;
-        return output;
+
     }
-    ~Vector() //ca sa dezaloc memoria alocata
+
+    Multime(Multime &set)
     {
-        delete []V;
+        card = set.GetCard();
+        int *multime = set.GetSet();
+        for (int i = 0; i < card; i++)
+            this->set[i] = multime[i];
     }
-    Vector operator*(const Vector &a); //Functie Inmultire 2 Vectori
-    Vector maxim(); //Functie Maxim in Modul
+
+    // destructor;
+    ~Multime()
+    {
+        card = 0;
+    }
+
+    // geters;
+    int GetCard()
+    {
+        return card;
+    }
+
+    int *GetSet()
+    {
+        return set;
+    }
+
+    // setters;
+    void SetCard(int card)
+    {
+        this->card = card;
+    }
+
+    void SetSet(int set[])
+    {
+        for (int i = 0; i < card; i++)
+            this->set[i] = set[i];
+    }
+
+    // metoda publica pentru trasnformarea unui vector in multime;
+    void array_to_set()
+    {
+        // sortare;
+        int i, aux, j;
+        for (i = 0; i < card - 1; i++)
+            for (j = i + 1; j < card; j++)
+                if (set[j] < set[i])
+                {
+                    aux = set[j], set[j] = set[i];
+                    set[i] = aux;
+                }
+
+        // eliminare dubluri;
+        for (i = 0; i < card - 1;)
+            if (set[i] == set[i + 1])
+            {
+                for (j = i + 1; j < card; j++)
+                    set[j - 1] = set[j];
+
+                card--;
+            }
+            else
+                i++;
+    }
+
+    //  overload operator "+" ==> reuniune;
+
+    Multime operator+(const Multime &set1)
+    {
+        Multime Union;
+        Union.card = this->card + set1.card;
+        Union.set[Union.card];
+        int i, j = 0;
+
+        for (i = 0; i < this->card; i++)
+            Union.set[i] = this->set[i];
+        for (; i < Union.card; i++)
+            Union.set[i] = set1.set[j++];
+
+        Union.array_to_set();
+
+        return Union;
+    }
+
+    // overload operator "*" ==> intersectia;
+
+    Multime operator*(const Multime &set1)
+    {
+        Multime Intersection;
+        int i, j, p = 0;
+        Intersection.card = 0;
+
+        Intersection.set[(this->card > set1.card) ? this->card : set1.card];
+        for (i = 0; i < this->card; i++)
+            for (j = 0; j < set1.card; j++)
+                if (this->set[i] == set1.set[j])
+                {
+                    Intersection.set[p++] = set[i];
+                    Intersection.card++;
+                }
+
+        Intersection.array_to_set();
+
+        return Intersection;
+    }
+
+    // overload operator "-" ==> diferenta;
+
+    Multime operator-(const Multime &set1)
+    {
+        Multime Difference;
+        int i, j, p = 0, ok;
+        Difference.card = 0;
+        Difference.set[(this->card > set1.card) ? this->card : set1.card];
+
+        for (i = 0; i < this->card; i++)
+        {
+            ok = 1;
+            for (j = 0; j < set1.card; j++)
+                if (this->set[i] == set1.set[j])
+                {
+                    ok = 0;
+                    break;
+                }
+            if (ok == 1)
+            {
+                Difference.set[p++] = set[i];
+                Difference.card++;
+            }
+        }
+
+        Difference.array_to_set();
+
+        return Difference;
+    }
+
+    // overload operator >> ==> citire;
+    friend istream &operator>>(istream &is, Multime &set1);
+
+    // overload operator << ==> afisare;
+    friend ostream &operator<<(ostream &out, const Multime &set1);
 };
-Vector Vector::operator*(const Vector &a) //Functie Inmultire 2 Vectori
+ostream &operator<<(ostream &out, const Multime &set1)
 {
-    if(this->nr!=a.nr) {cout<<"Eroare. Nr diferit de Elemente";}
+    cout << "Cardinalul multimii este: ";
+    out << set1.card << '\n';
     int i;
-    Vector nou;
-    Numar aux; aux.semn=1; aux.nr_cifre=1; aux.L.push_back(0); //aux=0
-    for(i=0; i<a.nr; i++) aux=aux+a.V[i]*this->V[i];
-    nou.nr=1; nou.V=new Numar[1]; nou.V[0]=aux;
-    return nou;
+    cout << "Elementele multimii sunt: ";
+    for (i = 0; i < set1.card; i++)
+        out << set1.set[i] << ' ';
+    cout << '\n';
+
+    return out;
 }
-Vector Vector::maxim() //Functie Maxim in Modul
+
+istream &operator>>(istream &is, Multime &set1)
 {
-    //Creez un nou vector cu un singur element in care se va retine maximul
-    Vector nou; nou.nr=1; nou.V=new Numar[1];
-    //Daca vectorul are 1 singur element, acela e maximul din vector
-    if(this->nr==1) {nou.V[0]=this->V[0]; return nou;}
-    //Altfel maxi=max dintre primele 2 elemente ale vectorului
-    Numar maxi=this->V[0].maxim(this->V[1]);
+    cout << "Dati cardinalul multimii: ";
+    is >> set1.card;
+    cout << "Dati elementele multimii: ";
     int i;
-    //Pt restul, maxi=max dintre el insusi si valoarea din Vector
-    for(i=2; i<this->nr; i++) maxi=maxi.maxim(this->V[i]);
-    nou.V[0]=maxi;
-    return nou;
+    for (i = 0; i < set1.card; i++)
+        is >> set1.set[i];
+
+    return is;
+}
+
+void read_sets(int &n, Multime m[])
+{
+    int i;
+    cout << "\n------------------------------------------------------------------------------------\n";
+    cout << "\nIntroduceti numarul de multimi: ";
+    cin >> n;
+    cout << "\n------------------------------------------------------------------------------------\n\n";
+    cout << "Introduceti multimile:\n\n";
+
+    for (i = 1; i <= n; i++)
+    {
+        cout << "MULTIMEA " << i << '\n';
+        cin >> m[i];
+        m[i].array_to_set();
+        cout << '\n';
+    }
+}
+
+void print_sets(int n, Multime m[])
+{
+    int i;
+    cout << "------------------------------------------------------------------------------------\n\n";
+    cout << "MULTIMILE CARE AU FOST INTRODUSE SUNT URMATOARELE:\n\n";
+
+    for (i = 1; i <= n; i++)
+    {
+        cout << "MULTIMEA " << i << '\n';
+        cout << m[i] << "\n";
+    }
 }
 
 int main()
 {
-/*
-    ifstream myfile ("numere.txt");
-    Numar a, b, c;
-    myfile >> a >> b;
-    cout<<a.maxim(b)<<endl;
-    cout<<b.maxim(a)<<endl;
-    cout<<a+b<<endl<<b+a<<endl<<a-b<<endl<<b-a<<endl<<a*b<<endl<<b*a<<endl;
-    cout<<a<<endl<<b<<endl;
-    myfile.close();
-    cin>>c;
-    ofstream myfileout ("numere_out.txt");
-    myfileout<<c<<" "<<c.maxim(a)<<endl;
-    myfileout.close();
-*/
+    Multime multimi[101];
+    int n, ok = 0;
+    while (true)
+    {
+        int optiune = 0;
+        cout << "\n------------------------------------------------------------------------------------\n\n";
+        cout << "VA ROG SELECTATI OPTIUNEA DIN MENIUL DE MAI JOS PRIN INTRODUCEREA NUMARULUI CORESPUNZATOR IN CONSOLA.\n\n";
+        cout << "1. Creare multimilor.\n";
+        cout << "2. Afisare multimilor memorate.\n";
+        cout << "3. Reuniune multimilor memorate.\n";
+        cout << "4. Intersectie multimilor memorate.\n";
+        cout << "5. Diferenta multimilor memorate.\n";
+        cout << "6. Iesire din program.\n\n";
+        cout << "Optiune: ";
+        cin >> optiune;
 
+        switch (optiune)
+        {
+        case 1:
+        {
+            read_sets(n, multimi);
+            ok = 1;
+            break;
+        }
+        case 2:
+        {
+            if(ok==1)
+                print_sets(n, multimi);
+            else
+                cout << "\nNU S-A MEMORAT NICIO MULTIME, VA ROG INTRODUCETI COMANDA 1 PENTRU O INTRODUCE DATE DESPRE MULTIMI!\n";
+            break;
 
+        }
+        case 3:
+        {
+            if (ok == 1)
+            {
+                cout << "------------------------------------------------------------------------------------\n\n";
+                cout << "SE VA EXECUTA REUNIUNEA MULTIMILOR MEMORATE!\n\n";
+                int i;
+                Multime reuniune;
 
-    ifstream fin("vector.txt");
-    Vector a, b, c;
-    fin>>a>>b;
-    cin>>c;
-    //cout<<a<<endl<<b<<endl<<c<<endl;
-    //cout<<a*b<<endl;
-    cout<<a.maxim()<<endl;
-    //cout<<b<<endl;
-    cout<<b.maxim()<<endl;
-    cout<<c.maxim()<<endl;
-    cout<<a<<endl;
-    cout<<b<<endl;
-    ofstream fout("afisare.txt");
-    fout<<c.maxim()<<endl;
-    fout.close();
-    fin.close();
+                for (i = 1; i <= n; i++)
+                    reuniune = reuniune + multimi[i];
+                cout << reuniune;
+            }
+            else
+                cout << "\nNU S-A MEMORAT NICIO MULTIME, VA ROG INTRODUCETI COMANDA 1 PENTRU O INTRODUCE DATE DESPRE MULTIMI!\n";
+            break;
+        }
+        case 4:
+        {
+            if (ok == 1)
+            {
+                cout << "------------------------------------------------------------------------------------\n\n";
+                cout << "SE VA EXECUTA INTERSECTIA MULTIMILOR MEMORATE!\n\n";
+                int i;
 
+                Multime intersectie = multimi[1];
 
+                for (i = 2; i <= n; i++)
+                    intersectie = intersectie * multimi[i];
+                cout << intersectie;
+            }
+            else
+                cout << "\nNU S-A MEMORAT NICIO MULTIME, VA ROG INTRODUCETI COMANDA 1 PENTRU O INTRODUCE DATE DESPRE MULTIMI!\n";
+            break;
+        }
+        case 5:
+        {
+            if (ok == 1)
+            {
+                cout << "------------------------------------------------------------------------------------\n\n";
+                cout << "SE VA EXECUTA DIFERENTA MULTIMILOR MEMORATE!\n\n";
+                int i;
+
+                Multime diferenta = multimi[1];
+
+                for (i = 2; i <= n; i++)
+                    diferenta = diferenta - multimi[i];
+                cout << diferenta;
+            }
+            else
+                cout << "\nNU S-A MEMORAT NICIO MULTIME, VA ROG INTRODUCETI COMANDA 1 PENTRU O INTRODUCE DATE DESPRE MULTIMI!\n";
+            break;
+        }
+        case 6:
+            cout << "\nMultumesc pentru ca mi-ati folosit programul, o zi buna! :)\n";
+            exit(0);
+            break;
+
+        default:
+            cout << "\nOPTIUNE INVALIDA, VA ROG SELECTATI UNA DINTRE CELE DE MAI JOS.\n\n";
+            cout << "------------------------------------------------------------------------------------\n\n";
+            break;
+        }
+    }
     return 0;
 }
